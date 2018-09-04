@@ -1,19 +1,3 @@
-/*
-	boptimize
-	this program makes an Abstract Syntax Tree out of a brainfuck program
-	the syntax:
-		program = statementList
-		statementList = statement*
-		statement = + | - | > | < | . | , | loop | eof
-		loop = '[' statementList ']'
-	see typedef statement, loop
-
-	implemented according to the brainducks specifications in other brainducks
-
-	notes to self - comments with "NTS"
-
-	assumes a preprocessor did some work before it, but work just fine without it
-*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +15,7 @@ typedef struct statement statement;
 typedef struct loop{
 	statement *block;
 	statement *end;
-//	int number;
+	int number;
 } loop;
 
 typedef struct statement {
@@ -116,7 +100,7 @@ statement *make_node(){
 		case '[':
 			node->l=alloc(sizeof(loop));
 			node->l->block=node->l->end=NULL;
-//			node->l->number=get_number();
+			node->l->number=get_number();
 			*(++sp)=node;
 			break;
 		case ']':
@@ -136,16 +120,16 @@ void print_node(statement *node){
 	putchar(node->type);
 	switch(node->type){
 		case '+':	case '>':
-			printf("%d\n",node->size);	break;
+			printf("%d\t",node->size);	break;
 		case '.':
 			if(node->printed_chr!=EOF)
-				putchar((char)node->printed_chr);
+				printf("%c\t",((char)node->printed_chr));
 			break;
-/*		case ']':
-			printf("%d\n",node->start->l->number);	break;
 		case '[':
-			printf("%d\n",node->l->number);	break;
-*/	}
+			printf("%d\t",node->l->number);	break;
+		case ']':
+			printf("%d\t",node->start->l->number);	break;
+	}
 }
 
 statement *make_list(){
@@ -161,10 +145,11 @@ statement *make_list(){
 
 	return list_head;
 }
-void print_list(statement node){
-	printf("%c%d\t",node.type,node.size);
-	if(node.next != NULL)
-		print_list(*node.next);
+void print_list(statement *node){
+	//printf("%c%d\t",node.type,node.size);
+	print_node(node);
+	if(node->next != NULL)
+		print_list(node->next);
 }
 
 statement *make_tree(statement *root){
@@ -182,17 +167,16 @@ statement *make_tree(statement *root){
 	return root;
 }
 
-void print_tree(statement* root, int depth){
-		/*****/
+void print_tree(statement* root, const int depth){
 	statement* current=root;
 	for(current=root;current->type!=']' && current->type!='e';current=current->next){
 		for(int i=0;i<depth;i++)	printf("\t");
-		printf("%c%d\n",current->type,current->size);
+		print_node(current);	putchar('\n');
 		if (current->type == '[')
 			print_tree(current->l->block,depth+1);
 	}
-//	for(int i=0;i<depth;i++)	putchar('\t');
-//	printf("%c%d\n",current->type,current->size);
+	for(int i=0;i<depth;i++)	putchar('\t');
+	print_node(current);	putchar('\n');
 }
 
 void free_node(statement* node){
@@ -226,7 +210,7 @@ int main(int argc, char** argv){
 	}	}
 	statement *root=make_list();
 	printf("\n\n\n");
-	print_list(*root);
+	print_list(root);
 	printf("\n\n\n");
 	root=make_tree(root);
 	print_tree(root,0);
