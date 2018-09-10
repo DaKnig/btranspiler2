@@ -1,11 +1,11 @@
+#define DEBUG
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 
-#define DEBUG
 
-FILE *in, *out;
 void parse(int argc, char** argv){
 
 }
@@ -49,7 +49,7 @@ void* alloc (size_t size){
 	return temp;
 }
 
-uint8_t count_adds(){
+uint8_t count_adds(FILE* in){
 	char temp=fgetc(in);
 	uint8_t count=0;
 	do {
@@ -59,7 +59,7 @@ uint8_t count_adds(){
 	ungetc(temp,in);
 	return count;
 }
-uint16_t count_movs(){
+uint16_t count_movs(FILE* in){
 	char temp=fgetc(in);
 	uint16_t count=0;
 	do {
@@ -71,13 +71,12 @@ uint16_t count_movs(){
 	return count;
 }
 
-statement *make_node(){
+statement *make_node(FILE* in){
 	static statement *stack[STACK_SIZE]={0}, **sp=stack;
 	statement *node= alloc(sizeof (statement));
-	//find a statement
 	int temp;
 	do		temp=fgetc(in);
-	while (temp != EOF && ( (strchr("+-><[],.",(char) temp) == NULL) || temp=='\0' ) );
+	while (temp!=EOF&&((strchr("+-><[],.",(char)temp)==NULL)||temp=='\0'));
 	node->type=temp;
 	if (temp==EOF)
 		node->type='e';
@@ -88,12 +87,12 @@ statement *make_node(){
 		case '+':	case '-':
 			ungetc(node->type, in);
 			node->type='+';
-			node->size=count_adds();
+			node->size=count_adds(in);
 			break;
 		case '>':	case '<':
 			ungetc(node->type, in);
 			node->type='>';
-			node->size=count_movs();	//generalize with modulu!
+			node->size=count_movs(in);	//generalize with modulu!
 			break;
 		case '.':
 			node->printed_chr=EOF;	break;
@@ -132,30 +131,35 @@ void print_node(statement *node){
 	}
 }
 
-statement *make_list(){
+statement *make_list(FILE* in){
 	statement *list_head;
 	statement *current;
 
-	list_head=current=make_node();
+	list_head=current=make_node(in);
 
 	while(current->type!='e'){
-		current->next=make_node();
+		current->next=make_node(in);
 		current=current->next;
 	}
 
 	return list_head;
 }
 void print_list(statement *node){
-	//printf("%c%d\t",node.type,node.size);
 	print_node(node);
 	if(node->next != NULL)
 		print_list(node->next);
 }
 
-statement *make_tree(statement *root){
+statement *make_tree(FILE* in){
 	//root points to a list constructed by make_list
-//	static statement *stack[STACK_SIZE]={0}, **sp=stack;
+	statement* root=make_list(in);
+#ifdef DEBUG
+	print_list(root);
+	printf("\n\n\n");
+#endif
+
 	statement *current=root;
+
 	do{
 		switch(current->type){
 			case '[':	current->next=current->l->end->next;
@@ -192,6 +196,7 @@ void free_tree(statement* root){
 	free_node(root);
 }
 int main(int argc, char** argv){
+	FILE *in, *out;
 	{//parse the args
 		if (argc!=3){
 			parse(argc,argv);
@@ -208,11 +213,8 @@ int main(int argc, char** argv){
 			perror("cant open output file");
 			return 2;
 	}	}
-	statement *root=make_list();
 	printf("\n\n\n");
-	print_list(root);
-	printf("\n\n\n");
-	root=make_tree(root);
+	statement *root=make_tree(in);
 	print_tree(root,0);
 	free_tree(root);
 	fclose(out);
