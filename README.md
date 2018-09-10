@@ -4,7 +4,8 @@ this program makes an Abstract Syntax Tree out of a brainfuck program
 ```	program = statementList
 	statementList = statement*
 	statement = + | - | > | < | . | , | loop | e
-	loop = '[' statementList ']'	```
+	loop = '[' statementList ']'	
+```
 
 see typedef statement, loop
 
