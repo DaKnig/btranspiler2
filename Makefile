@@ -1,15 +1,24 @@
 name:=./boptimizer
+executable:=bin/$(name)
+output:=misc/output
+expected:=misc/output
 
-all: run
+all: compile
 
-run: $(name)
-	$(name)
+compile: $(executable)
 
-debug: $(name)
-	gdb -q $(name)
+check: $(executable)
+	$(executable)>$(output)
+	diff $(expected) $(output)
 
-$(name): $(name).c
-	gcc -g -o $(name) $(name).c   -pedantic-errors -Wall -Wextra
+run: $(executable)
+	$(executable)
+
+debug: $(executable)
+	gdb -q $(executable)
+
+$(executable): $(name).c
+	gcc -g -o $(executable) $(name).c   -pedantic-errors -Wall -Wextra
 
 clear:
-	rm $(name)
+	rm bin/*

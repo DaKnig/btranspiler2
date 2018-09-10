@@ -71,7 +71,7 @@ uint16_t count_movs(FILE* in){
 	return count;
 }
 
-statement *make_node(FILE* in){
+static statement *make_node(FILE* in){
 	static statement *stack[STACK_SIZE]={0}, **sp=stack;
 	statement *node= alloc(sizeof (statement));
 	int temp;
@@ -115,23 +115,23 @@ statement *make_node(FILE* in){
 
 	return node;
 }
-void print_node(statement *node){
-	putchar(node->type);
+static void print_node(statement* node,FILE* out){
+	fprintf(out,"%c",node->type);
 	switch(node->type){
 		case '+':	case '>':
-			printf("%d\t",node->size);	break;
+			fprintf(out, "%d\t",node->size);	break;
 		case '.':
 			if(node->printed_chr!=EOF)
-				printf("%c\t",((char)node->printed_chr));
+				fprintf(out , "%c\t",((char)node->printed_chr));
 			break;
 		case '[':
-			printf("%d\t",node->l->number);	break;
+			fprintf(out, "%d\t",node->l->number);	break;
 		case ']':
-			printf("%d\t",node->start->l->number);	break;
+			fprintf(out, "%d\t",node->start->l->number);	break;
 	}
 }
 
-statement *make_list(FILE* in){
+static statement *make_list(FILE* in){
 	statement *list_head;
 	statement *current;
 
@@ -144,8 +144,8 @@ statement *make_list(FILE* in){
 
 	return list_head;
 }
-void print_list(statement *node){
-	print_node(node);
+static void print_list(statement* node){
+	print_node(node,stdout);
 	if(node->next != NULL)
 		print_list(node->next);
 }
@@ -171,19 +171,19 @@ statement *make_tree(FILE* in){
 	return root;
 }
 
-void print_tree(statement* root, const int depth){
+void print_tree(statement* root, const int depth, FILE* out){
 	statement* current=root;
 	for(current=root;current->type!=']' && current->type!='e';current=current->next){
-		for(int i=0;i<depth;i++)	printf("\t");
-		print_node(current);	putchar('\n');
+		for(int i=0;i<depth;i++)	fprintf(out,"\t");
+		print_node(current,out);	fprintf(out,"\n");
 		if (current->type == '[')
-			print_tree(current->l->block,depth+1);
+			print_tree(current->l->block,depth+1,out);
 	}
-	for(int i=0;i<depth;i++)	putchar('\t');
-	print_node(current);	putchar('\n');
+	for(int i=0;i<depth;i++)	fprintf(out,"\t");
+	print_node(current,out);	fprintf(out,"\n");
 }
 
-void free_node(statement* node){
+static void free_node(statement* node){
 	if (node->type=='[')
 		free(node->l);
 	free(node);
@@ -208,17 +208,18 @@ int main(int argc, char** argv){
 			return 1;
 		}
 //		out=fopen(argv[2],"w");
-		out=fopen("output","w");
+//		out=fopen("output","w");
+		out=stdout;
 		if (out==NULL){
 			perror("cant open output file");
 			return 2;
 	}	}
-	printf("\n\n\n");
+	fprintf(out,"\n\n\n");
 	statement *root=make_tree(in);
-	print_tree(root,0);
+	print_tree(root,0,out);
 	free_tree(root);
 	fclose(out);
 	fclose(in);
-	printf("\n");
+	fprintf(out,"\n");
 	return 0;
 }
